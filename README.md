@@ -1,62 +1,102 @@
-# G3_Divide-Conquer_F1
+# G3_Divide_&_Conquer
 
-**Conteúdo da Disciplina**: Counting Inversions
-
-## Alunos
-|Matrícula | Aluno |
-| -- | -- |
-| 20/0035703 | Breno Alexandre Soares Garcia |
-| 22/1008033 | Fernando Gabriel Dos Santos Carrijo |
+**Conteúdo da Disciplina**: Dividir e Conquistar
 
 ## Sobre
-O projeto **G3_Divide-Conquer_F1** é ...
+O **GP Chaos Index** é um simulador de corrida inspirado em Fórmula 1 que usa **Contagem de Inversões** para medir o quanto a ordem de chegada mudou em relação à ordem de largada.
 
-## Técnica Utilizada
-**Counting Inversions**
+A proposta é comparar duas listas:
 
-O projeto...
+```text
+Largada:  VER, NOR, LEC, HAM...
+Chegada:  NOR, HAM, VER, LEC...
+```
 
-## Vídeo
+Cada inversão representa um par de pilotos cuja ordem relativa mudou. Quanto maior o número de inversões, maior o **índice de caos** da corrida.
 
-Segue o vídeo feito pela dupla: [Link](Link)
+## Algoritmo
+A contagem de inversões foi implementada com a mesma lógica do **Merge Sort**:
 
-## Screenshots
+1. Divide a lista em duas metades.
+2. Conta inversões na metade esquerda.
+3. Conta inversões na metade direita.
+4. Conta inversões cruzadas durante o merge.
 
-![Figura 1](assets/figura1.svg)
-> *Figura 1: Descrição.*
+Complexidade:
+
+```text
+O(n log n)
+```
+
+## Ideia do Simulador
+O projeto usa apenas pilotos de quatro equipes:
+
+* McLaren
+* Ferrari
+* Mercedes
+* Red Bull
+
+Cada GP possui:
+
+* chance própria de chuva;
+* vantagem específica para algumas equipes;
+* nível base de caos;
+* comportamento diferente quando chove.
+
+Quando a chuva acontece, o caos aumenta bastante e a vantagem passa a favorecer pilotos com maior habilidade de chuva e experiência.
+
+## Funcionalidades
+* Simulação de diferentes GPs.
+* Ordem de largada gerada por desempenho de classificação.
+* Ordem de chegada simulada por pista, equipe, chuva e caos.
+* Índice de caos baseado em contagem de inversões.
+* Visualização da largada e chegada lado a lado.
+* Destaque de posições ganhas e perdidas.
+* Exibição dos passos do Merge Count.
+* Testes simples para validar a contagem de inversões.
 
 ## Instalação
-**Linguagem**: `Python 3.8+`<br>
-**Framework/Biblioteca**:
+**Linguagem**: `JavaScript`<br>
+**Framework**: `Nenhum`<br>
 
-**Pré-requisitos:**
-É necessário ter o Python instalado na máquina.
+Não há dependências externas.
 
-**Passo a passo da instalação:**
+## Uso
+Abra o arquivo `index.html` no navegador.
 
-1. Clone este repositório:
+Também é possível servir a pasta localmente:
+
 ```bash
-git clone https://github.com/projeto-de-algoritmos-2026/G3_Divide-Conquer_F1
+python -m http.server 8000
 ```
 
-2. Acesse a pasta do projeto:
-```bash
-cd G3_Divide-Conquer_F1
+Depois acesse:
+
+```text
+http://localhost:8000
 ```
 
-3. Execute o projeto:
-```bash
-python main.py
-```
-
+## Testes
 Para executar os testes:
 
 ```bash
-python -m unittest discover
+npm test
 ```
 
-## Estrutura do Projeto
+## Fonte dos pilotos
+Os pilotos usados no simulador foram baseados na página oficial de equipes da Fórmula 1 para a temporada 2026: https://www.formula1.com/en/teams
+
+## Estrutura
 ```text
-├── main.py
+.
+├── index.html
+├── package.json
+├── README.md
 ├── src
+│   ├── app.js
+│   ├── data.js
+│   ├── inversions.js
+│   └── styles.css
+└── tests
+    └── inversions.test.mjs
 ```

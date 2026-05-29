@@ -1,0 +1,8 @@
+{
+  "name": "g3-divide-conquer-gp-chaos-index",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/inversions.test.mjs"
+  }
+}
