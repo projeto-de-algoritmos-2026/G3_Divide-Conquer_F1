@@ -60,9 +60,4 @@ python -m unittest discover
 .
 ├── main.py
 ├── src
-│   ├── models.py
-│   ├── optimizer.py
-│   └── ui.py
-└── tests
-    └── test_greedy.py
 ```
