@@ -57,7 +57,6 @@ python -m unittest discover
 
 ## Estrutura do Projeto
 ```text
-.
 ├── main.py
 ├── src
 ```
