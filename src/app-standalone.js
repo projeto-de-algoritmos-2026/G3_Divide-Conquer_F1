@@ -1,0 +1,485 @@
+const teams = {
+  mclaren: { name: "McLaren", color: "#ff8700" },
+  ferrari: { name: "Ferrari", color: "#ef1a2d" },
+  mercedes: { name: "Mercedes", color: "#00a19c" },
+  redbull: { name: "Red Bull", color: "#3671c6" },
+};
+
+const drivers = [
+  { id: "nor", number: 4, short: "NOR", name: "Lando Norris", team: "mclaren", basePace: 91, rainSkill: 84, experience: 82 },
+  { id: "pia", number: 81, short: "PIA", name: "Oscar Piastri", team: "mclaren", basePace: 92, rainSkill: 80, experience: 74 },
+  { id: "lec", number: 16, short: "LEC", name: "Charles Leclerc", team: "ferrari", basePace: 91, rainSkill: 86, experience: 86 },
+  { id: "ham", number: 44, short: "HAM", name: "Lewis Hamilton", team: "ferrari", basePace: 89, rainSkill: 96, experience: 99 },
+  { id: "rus", number: 63, short: "RUS", name: "George Russell", team: "mercedes", basePace: 88, rainSkill: 88, experience: 85 },
+  { id: "ant", number: 12, short: "ANT", name: "Kimi Antonelli", team: "mercedes", basePace: 85, rainSkill: 78, experience: 60 },
+  { id: "ver", number: 1, short: "VER", name: "Max Verstappen", team: "redbull", basePace: 95, rainSkill: 98, experience: 94 },
+  { id: "had", number: 6, short: "HAD", name: "Isack Hadjar", team: "redbull", basePace: 84, rainSkill: 79, experience: 58 },
+];
+
+const tracks = [
+  {
+    id: "interlagos",
+    flag: "BR",
+    name: "GP de São Paulo",
+    rainChance: 0.46,
+    chaosBase: 0.58,
+    teamBias: { mclaren: 1.02, ferrari: 0.98, mercedes: 1.04, redbull: 1.0 },
+    characteristics: ["reta dos boxes curta", "miolo travado", "subida forte no setor final"],
+    note: "Interlagos costuma embaralhar estratégia, tráfego e clima.",
+  },
+  {
+    id: "silverstone",
+    flag: "GB",
+    name: "GP da Grã-Bretanha",
+    rainChance: 0.38,
+    chaosBase: 0.5,
+    teamBias: { mclaren: 1.05, ferrari: 0.98, mercedes: 1.03, redbull: 0.99 },
+    characteristics: ["curvas longas de alta", "sequência Maggots-Becketts", "pouca tração lenta"],
+    note: "Alta velocidade com vantagem para carros fortes em curvas longas.",
+  },
+  {
+    id: "monaco",
+    flag: "MC",
+    name: "GP de Mônaco",
+    rainChance: 0.12,
+    chaosBase: 0.28,
+    teamBias: { mclaren: 0.99, ferrari: 1.06, mercedes: 0.98, redbull: 1.01 },
+    characteristics: ["ruas estreitas", "curvas lentas", "baixíssima chance de ultrapassagem"],
+    note: "Poucas ultrapassagens: largada pesa muito no resultado.",
+  },
+  {
+    id: "spa",
+    flag: "BE",
+    name: "GP da Bélgica",
+    rainChance: 0.5,
+    chaosBase: 0.62,
+    teamBias: { mclaren: 1.0, ferrari: 0.99, mercedes: 1.0, redbull: 1.06 },
+    characteristics: ["reta Kemmel longa", "Eau Rouge/Raidillon", "volta longa e clima instável"],
+    note: "Spa combina pista longa, velocidade e chuva imprevisível.",
+  },
+  {
+    id: "singapore",
+    flag: "SG",
+    name: "GP de Singapura",
+    rainChance: 0.32,
+    chaosBase: 0.7,
+    teamBias: { mclaren: 1.01, ferrari: 1.04, mercedes: 0.99, redbull: 0.98 },
+    characteristics: ["circuito de rua", "muitas curvas de baixa", "muro perto e safety car provável"],
+    note: "Circuito de rua com safety cars e alta chance de confusão.",
+  },
+  {
+    id: "bahrain",
+    flag: "BH",
+    name: "GP do Bahrein",
+    rainChance: 0.03,
+    chaosBase: 0.35,
+    teamBias: { mclaren: 1.0, ferrari: 1.02, mercedes: 0.99, redbull: 1.04 },
+    characteristics: ["retas fortes", "frenagens pesadas", "tração na saída de curva"],
+    note: "Pouca chuva: o caos depende mais de ritmo e estratégia.",
+  },
+];
+
+function countInversions(values) {
+  const steps = [];
+  const normalized = values.map((value, index) => ({ value, index }));
+  const result = mergeCount(normalized, 0, steps);
+
+  return {
+    count: result.count,
+    sorted: result.sorted.map((entry) => entry.value),
+    steps,
+  };
+}
+
+function mergeCount(items, depth, steps) {
+  if (items.length <= 1) {
+    return { sorted: items, count: 0 };
+  }
+
+  const middle = Math.floor(items.length / 2);
+  const left = mergeCount(items.slice(0, middle), depth + 1, steps);
+  const right = mergeCount(items.slice(middle), depth + 1, steps);
+  const merged = [];
+  let leftIndex = 0;
+  let rightIndex = 0;
+  let splitInversions = 0;
+
+  while (leftIndex < left.sorted.length && rightIndex < right.sorted.length) {
+    if (left.sorted[leftIndex].value <= right.sorted[rightIndex].value) {
+      merged.push(left.sorted[leftIndex]);
+      leftIndex += 1;
+    } else {
+      merged.push(right.sorted[rightIndex]);
+      splitInversions += left.sorted.length - leftIndex;
+      rightIndex += 1;
+    }
+  }
+
+  while (leftIndex < left.sorted.length) {
+    merged.push(left.sorted[leftIndex]);
+    leftIndex += 1;
+  }
+
+  while (rightIndex < right.sorted.length) {
+    merged.push(right.sorted[rightIndex]);
+    rightIndex += 1;
+  }
+
+  steps.push({
+    depth,
+    left: left.sorted.map((entry) => entry.value),
+    right: right.sorted.map((entry) => entry.value),
+    merged: merged.map((entry) => entry.value),
+    splitInversions,
+    totalInversions: left.count + right.count + splitInversions,
+  });
+
+  return {
+    sorted: merged,
+    count: left.count + right.count + splitInversions,
+  };
+}
+
+function orderToInversionArray(startOrder, finishOrder) {
+  const startPosition = new Map(startOrder.map((driverId, index) => [driverId, index]));
+  return finishOrder.map((driverId) => startPosition.get(driverId));
+}
+
+function maxInversions(size) {
+  return (size * (size - 1)) / 2;
+}
+
+const state = {
+  seed: 2026,
+  trackId: tracks[0].id,
+  rain: false,
+  startOrder: [],
+  finishOrder: [],
+  inversionResult: null,
+};
+
+const elements = {
+  trackSelect: document.querySelector("#trackSelect"),
+  seedInput: document.querySelector("#seedInput"),
+  simulateButton: document.querySelector("#simulateButton"),
+  qualifyingButton: document.querySelector("#qualifyingButton"),
+  resetButton: document.querySelector("#resetButton"),
+  startList: document.querySelector("#startList"),
+  finishList: document.querySelector("#finishList"),
+  inversionCount: document.querySelector("#inversionCount"),
+  chaosIndex: document.querySelector("#chaosIndex"),
+  weatherState: document.querySelector("#weatherState"),
+  chaosBar: document.querySelector("#chaosBar"),
+  mergeSteps: document.querySelector("#mergeSteps"),
+  summaryText: document.querySelector("#summaryText"),
+  influenceList: document.querySelector("#influenceList"),
+  trackFlag: document.querySelector("#trackFlag"),
+  trackName: document.querySelector("#trackName"),
+  rainChance: document.querySelector("#rainChance"),
+  favoredTeam: document.querySelector("#favoredTeam"),
+  rainBoost: document.querySelector("#rainBoost"),
+  eventList: document.querySelector("#eventList"),
+  mergeToggle: document.querySelector("#mergeToggle"),
+  mergeClose: document.querySelector("#mergeClose"),
+  mergeDrawer: document.querySelector("#mergeDrawer"),
+};
+
+function init() {
+  tracks.forEach((track) => {
+    const option = document.createElement("option");
+    option.value = track.id;
+    option.textContent = track.name;
+    elements.trackSelect.append(option);
+  });
+
+  elements.trackSelect.value = state.trackId;
+  elements.trackSelect.addEventListener("change", () => {
+    state.trackId = elements.trackSelect.value;
+    resetRace(false);
+  });
+
+  elements.seedInput.addEventListener("input", () => {
+    state.seed = Number(elements.seedInput.value || 1);
+  });
+
+  elements.simulateButton.addEventListener("click", simulateRace);
+  elements.mergeToggle.addEventListener("click", toggleMergeDrawer);
+  elements.mergeClose.addEventListener("click", hideMergeDrawer);
+  elements.qualifyingButton.addEventListener("click", () => {
+    state.seed = Number(elements.seedInput.value || 1) + 17;
+    elements.seedInput.value = state.seed;
+    generateQualifying();
+    simulateRace();
+  });
+  elements.resetButton.addEventListener("click", () => resetRace(true));
+
+  resetRace(true);
+}
+
+function resetRace(resetSeed) {
+  if (resetSeed) {
+    state.seed = Number(elements.seedInput.value || 2026);
+  }
+  generateQualifying();
+  state.finishOrder = [...state.startOrder];
+  state.rain = false;
+  updateTrackPanel();
+  analyzeRace();
+  render();
+}
+
+function generateQualifying() {
+  const track = getTrack();
+  const rng = createRng(state.seed + hashString(track.id));
+
+  state.startOrder = [...drivers]
+    .map((driver) => ({
+      driver,
+      score: qualifyingScore(driver, track, rng),
+    }))
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.driver.id);
+}
+
+function simulateRace() {
+  const track = getTrack();
+  const rng = createRng(state.seed * 7 + hashString(track.id));
+  state.rain = rng() < track.rainChance;
+  const chaos = track.chaosBase + (state.rain ? 0.55 : 0);
+
+  state.finishOrder = state.startOrder
+    .map((driverId, index) => {
+      const driver = getDriver(driverId);
+      return {
+        driver,
+        score: raceScore(driver, track, index, chaos, rng),
+      };
+    })
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.driver.id);
+
+  analyzeRace();
+  render();
+}
+
+function qualifyingScore(driver, track, rng) {
+  const teamAdvantage = track.teamBias[driver.team] ?? 1;
+  return driver.basePace * teamAdvantage + (rng() - 0.5) * 8;
+}
+
+function raceScore(driver, track, startIndex, chaos, rng) {
+  const teamAdvantage = track.teamBias[driver.team] ?? 1;
+  const positionPenalty = startIndex * 1.8;
+  const teamScore = driver.basePace * teamAdvantage;
+  const rainScore = state.rain ? driver.rainSkill * 0.8 + driver.experience * 0.35 : 0;
+  const randomChaos = (rng() - 0.5) * 34 * chaos;
+  const dryVariation = state.rain ? 0 : (rng() - 0.5) * 8;
+
+  return teamScore + rainScore + randomChaos + dryVariation - positionPenalty;
+}
+
+function analyzeRace() {
+  const inversionArray = orderToInversionArray(state.startOrder, state.finishOrder);
+  state.inversionResult = countInversions(inversionArray);
+}
+
+function render() {
+  renderOrder(elements.startList, state.startOrder, false);
+  renderOrder(elements.finishList, state.finishOrder, true);
+  renderMetrics();
+  renderInfluences();
+  renderEvents();
+  renderSteps();
+  updateTrackPanel();
+}
+
+function renderOrder(list, order, compareWithStart) {
+  list.innerHTML = "";
+  const startPosition = new Map(state.startOrder.map((driverId, index) => [driverId, index]));
+
+  order.forEach((driverId, index) => {
+    const driver = getDriver(driverId);
+    const team = teams[driver.team];
+    const previousIndex = startPosition.get(driverId);
+    const delta = previousIndex - index;
+    const item = document.createElement("li");
+    item.className = "driver-card";
+    item.style.setProperty("--team-color", team.color);
+
+    const movement = compareWithStart ? formatDelta(delta) : "P" + String(index + 1);
+    const movementClass = compareWithStart
+      ? delta > 0
+        ? "gain"
+        : delta < 0
+          ? "loss"
+          : "same"
+      : "same";
+
+    item.innerHTML = `
+      <span class="position">${index + 1}</span>
+      <span class="helmet">#${driver.number}</span>
+      <span class="driver-main">
+        <strong>${driver.short}</strong>
+        <small>${driver.name}</small>
+      </span>
+      <span class="team-name">${team.name}</span>
+      <span class="movement ${movementClass}">${movement}</span>
+    `;
+    list.append(item);
+  });
+}
+
+function renderMetrics() {
+  const inversions = state.inversionResult.count;
+  const max = maxInversions(drivers.length);
+  const chaos = Math.round((inversions / max) * 100);
+  const weather = state.rain ? "Chuva" : "Seco";
+
+  elements.inversionCount.textContent = String(inversions);
+  elements.chaosIndex.textContent = `${chaos}%`;
+  elements.weatherState.textContent = weather;
+  elements.weatherState.className = state.rain ? "rain" : "";
+  elements.chaosBar.style.width = `${chaos}%`;
+  elements.summaryText.textContent =
+    `${inversions} inversões em ${max} possíveis. ` +
+    `A chegada trocou ${chaos}% dos pares relativos da largada.`;
+}
+
+function renderInfluences() {
+  const track = getTrack();
+  const bestTeam = Object.entries(track.teamBias).sort((a, b) => b[1] - a[1])[0];
+  const items = [
+    `Características: ${track.characteristics.join("; ")}.`,
+    `Vantagem de pista: ${teams[bestTeam[0]].name} (${bestTeam[1].toFixed(2)}x).`,
+    `Chuva neste GP: ${Math.round(track.rainChance * 100)}% de chance.`,
+  ];
+
+  elements.influenceList.innerHTML = items.map((item) => `<li>${item}</li>`).join("");
+}
+
+function renderEvents() {
+  const track = getTrack();
+  const rainSpecialists = getRainSpecialists();
+  const biggestMovers = getBiggestMovers();
+  const events = [
+    state.rain
+      ? `Chuva ativa: ${rainSpecialists.map((driver) => driver.short).join(", ")} receberam forte vantagem.`
+      : "Sem chuva: vantagem ficou mais ligada ao carro, à largada e ao ritmo seco.",
+    track.note,
+    biggestMovers.length
+      ? `Maiores mudanças: ${biggestMovers
+          .map((entry) => `${entry.driver.short} ${formatDelta(entry.delta)}`)
+          .join(", ")}.`
+      : "Sem grandes mudanças de posição nesta simulação.",
+    `Caos base da pista: ${Math.round(track.chaosBase * 100)}%.`,
+  ];
+
+  elements.eventList.innerHTML = events.map((event) => `<li>${event}</li>`).join("");
+}
+
+function renderSteps() {
+  const steps = state.inversionResult.steps;
+  elements.mergeSteps.innerHTML = "";
+
+  steps.forEach((step) => {
+    const row = document.createElement("article");
+    row.className = "merge-step";
+    row.style.setProperty("--depth", step.depth);
+    row.innerHTML = `
+      <div>
+        <span>esq.</span>
+        <strong>${formatArray(step.left)}</strong>
+      </div>
+      <div>
+        <span>dir.</span>
+        <strong>${formatArray(step.right)}</strong>
+      </div>
+      <div>
+        <span>merge</span>
+        <strong>${formatArray(step.merged)}</strong>
+      </div>
+      <div class="step-count">+${step.splitInversions}</div>
+    `;
+    elements.mergeSteps.append(row);
+  });
+}
+
+function updateTrackPanel() {
+  const track = getTrack();
+  const bestTeam = Object.entries(track.teamBias).sort((a, b) => b[1] - a[1])[0];
+  elements.trackFlag.textContent = track.flag;
+  elements.trackName.textContent = track.name;
+  elements.rainChance.textContent = `Chuva: ${Math.round(track.rainChance * 100)}%`;
+  elements.favoredTeam.textContent = `Vantagem: ${teams[bestTeam[0]].name}`;
+  elements.rainBoost.textContent = state.rain
+    ? "Chuva: experiência e talento no molhado pesam muito"
+    : "Seco: carro e largada pesam mais";
+}
+
+function toggleMergeDrawer() {
+  const shouldShow = elements.mergeDrawer.hidden;
+  elements.mergeDrawer.hidden = !shouldShow;
+  elements.mergeToggle.setAttribute("aria-expanded", String(shouldShow));
+  elements.mergeToggle.textContent = shouldShow ? "Ocultar Merge" : "Merge Count";
+}
+
+function hideMergeDrawer() {
+  elements.mergeDrawer.hidden = true;
+  elements.mergeToggle.setAttribute("aria-expanded", "false");
+  elements.mergeToggle.textContent = "Merge Count";
+}
+
+function getRainSpecialists() {
+  return [...drivers]
+    .sort((a, b) => b.rainSkill + b.experience * 0.25 - (a.rainSkill + a.experience * 0.25))
+    .slice(0, 3);
+}
+
+function getBiggestMovers() {
+  const startPosition = new Map(state.startOrder.map((driverId, index) => [driverId, index]));
+  return state.finishOrder
+    .map((driverId, index) => {
+      const driver = getDriver(driverId);
+      return {
+        driver,
+        delta: startPosition.get(driverId) - index,
+      };
+    })
+    .filter((entry) => entry.delta !== 0)
+    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+    .slice(0, 3);
+}
+
+function getTrack() {
+  return tracks.find((track) => track.id === state.trackId) ?? tracks[0];
+}
+
+function getDriver(driverId) {
+  return drivers.find((driver) => driver.id === driverId);
+}
+
+function formatDelta(delta) {
+  if (delta > 0) return `+${delta}`;
+  if (delta < 0) return String(delta);
+  return "0";
+}
+
+function formatArray(values) {
+  return `[${values.map((value) => value + 1).join(", ")}]`;
+}
+
+function createRng(seed) {
+  let value = seed % 2147483647;
+  if (value <= 0) value += 2147483646;
+
+  return () => {
+    value = (value * 16807) % 2147483647;
+    return (value - 1) / 2147483646;
+  };
+}
+
+function hashString(text) {
+  return [...text].reduce((hash, char) => hash + char.charCodeAt(0), 0);
+}
+
+init();

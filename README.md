@@ -66,6 +66,8 @@ Não há dependências externas.
 ## Uso
 Abra o arquivo `index.html` no navegador.
 
+O projeto também funciona quando aberto diretamente pelo arquivo, sem servidor local. O arquivo usado pela página é `src/app-standalone.js`, criado justamente para evitar bloqueios de `import` em páginas `file://`.
+
 Também é possível servir a pasta localmente:
 
 ```bash
@@ -96,6 +98,7 @@ Os pilotos usados no simulador foram baseados na página oficial de equipes da F
 ├── README.md
 ├── src
 │   ├── app.js
+│   ├── app-standalone.js
 │   ├── data.js
 │   ├── inversions.js
 │   └── styles.css
