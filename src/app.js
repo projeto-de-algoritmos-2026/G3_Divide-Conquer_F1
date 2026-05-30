@@ -8,6 +8,9 @@ const state = {
   startOrder: [],
   finishOrder: [],
   inversionResult: null,
+  effectiveChaos: 0,
+  chaosChecks: 1,
+  minimumExpectedInversions: 0,
 };
 
 const elements = {
@@ -76,6 +79,9 @@ function resetRace(resetSeed) {
   generateQualifying();
   state.finishOrder = [...state.startOrder];
   state.rain = false;
+  state.effectiveChaos = getTrack().chaosBase;
+  state.chaosChecks = 1;
+  state.minimumExpectedInversions = 0;
   updateTrackPanel();
   analyzeRace();
   render();
@@ -96,11 +102,50 @@ function generateQualifying() {
 
 function simulateRace() {
   const track = getTrack();
-  const rng = createRng(state.seed * 7 + hashString(track.id));
-  state.rain = rng() < track.rainChance;
-  const chaos = track.chaosBase + (state.rain ? 0.55 : 0);
+  const baseSeed = state.seed * 7 + hashString(track.id);
+  const weatherRng = createRng(baseSeed);
+  state.rain = weatherRng() < track.rainChance;
+  state.effectiveChaos = track.chaosBase + (state.rain ? 0.55 : 0);
 
-  state.finishOrder = state.startOrder
+  const guardedRace = simulateGuardedRace(track, baseSeed);
+  state.finishOrder = guardedRace.finishOrder;
+  state.inversionResult = guardedRace.inversionResult;
+  state.chaosChecks = guardedRace.checks;
+  state.minimumExpectedInversions = guardedRace.minimumExpectedInversions;
+  render();
+}
+
+function simulateGuardedRace(track, baseSeed) {
+  const minimumExpectedInversions = minimumInversionsForScenario(track, state.effectiveChaos);
+  const attempts = minimumExpectedInversions > 0 ? 8 : 1;
+  let bestRace = null;
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const rng = createRng(baseSeed + 9973 * (attempt + 1));
+    const finishOrder = buildFinishOrder(track, state.effectiveChaos, rng);
+    const inversionArray = orderToInversionArray(state.startOrder, finishOrder);
+    const inversionResult = countInversions(inversionArray);
+    const candidate = {
+      finishOrder,
+      inversionResult,
+      checks: attempt + 1,
+      minimumExpectedInversions,
+    };
+
+    if (!bestRace || inversionResult.count > bestRace.inversionResult.count) {
+      bestRace = candidate;
+    }
+
+    if (inversionResult.count >= minimumExpectedInversions) {
+      return candidate;
+    }
+  }
+
+  return bestRace;
+}
+
+function buildFinishOrder(track, chaos, rng) {
+  return state.startOrder
     .map((driverId, index) => {
       const driver = getDriver(driverId);
       return {
@@ -110,9 +155,6 @@ function simulateRace() {
     })
     .sort((a, b) => b.score - a.score)
     .map((entry) => entry.driver.id);
-
-  analyzeRace();
-  render();
 }
 
 function qualifyingScore(driver, track, rng) {
@@ -122,13 +164,19 @@ function qualifyingScore(driver, track, rng) {
 
 function raceScore(driver, track, startIndex, chaos, rng) {
   const teamAdvantage = track.teamBias[driver.team] ?? 1;
-  const positionPenalty = startIndex * 1.8;
+  const positionPenalty = startIndex * (state.rain ? 1.05 : 1.8);
   const teamScore = driver.basePace * teamAdvantage;
-  const rainScore = state.rain ? (driver.rainSkill * 0.8 + driver.experience * 0.35) : 0;
-  const randomChaos = (rng() - 0.5) * 34 * chaos;
+  const rainScore = state.rain
+    ? (driver.rainSkill - 80) * 0.75 + (driver.experience - 75) * 0.3
+    : 0;
+  const rainAttack = state.rain
+    ? Math.max(0, startIndex - 2) * ((driver.rainSkill - 80) * 0.45 + (driver.experience - 75) * 0.18)
+    : 0;
+  const randomChaos = (rng() - 0.5) * 46 * chaos;
   const dryVariation = state.rain ? 0 : (rng() - 0.5) * 8;
+  const incidentSwing = state.rain && chaos > 0.95 && rng() < 0.34 ? (rng() - 0.5) * 24 : 0;
 
-  return teamScore + rainScore + randomChaos + dryVariation - positionPenalty;
+  return teamScore + rainScore + rainAttack + randomChaos + dryVariation + incidentSwing - positionPenalty;
 }
 
 function analyzeRace() {
@@ -226,9 +274,26 @@ function renderEvents() {
           .join(", ")}.`
       : "Sem grandes mudanças de posição nesta simulação.",
     `Caos base da pista: ${Math.round(track.chaosBase * 100)}%.`,
+    state.minimumExpectedInversions > 0
+      ? `Check interno: ${state.chaosChecks} amostra(s), mínimo esperado ${state.minimumExpectedInversions} inversões.`
+      : "Check interno: cenário dentro da faixa normal de estabilidade.",
   ];
 
   elements.eventList.innerHTML = events.map((event) => `<li>${event}</li>`).join("");
+}
+
+function minimumInversionsForScenario(track, effectiveChaos) {
+  const max = maxInversions(drivers.length);
+
+  if (!state.rain && effectiveChaos < 0.78) {
+    return 0;
+  }
+
+  const ratio = state.rain
+    ? Math.min(0.46, 0.24 + track.chaosBase * 0.18 + Math.max(0, effectiveChaos - 0.9) * 0.12)
+    : Math.min(0.28, Math.max(0, effectiveChaos - 0.68) * 0.36);
+
+  return Math.round(max * ratio);
 }
 
 function renderSteps() {
