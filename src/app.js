@@ -34,6 +34,8 @@ const elements = {
   favoredTeam: document.querySelector("#favoredTeam"),
   rainBoost: document.querySelector("#rainBoost"),
   eventList: document.querySelector("#eventList"),
+  chaosCheckToggle: document.querySelector("#chaosCheckToggle"),
+  chaosCheckDetails: document.querySelector("#chaosCheckDetails"),
   mergeToggle: document.querySelector("#mergeToggle"),
   mergeClose: document.querySelector("#mergeClose"),
   mergeDrawer: document.querySelector("#mergeDrawer"),
@@ -58,6 +60,7 @@ function init() {
   });
 
   elements.simulateButton.addEventListener("click", simulateRace);
+  elements.chaosCheckToggle.addEventListener("click", toggleChaosCheck);
   elements.mergeToggle.addEventListener("click", toggleMergeDrawer);
   elements.mergeClose.addEventListener("click", hideMergeDrawer);
   elements.qualifyingButton.addEventListener("click", () => {
@@ -158,14 +161,12 @@ function buildFinishOrder(track, chaos, rng) {
 }
 
 function qualifyingScore(driver, track, rng) {
-  const teamAdvantage = track.teamBias[driver.team] ?? 1;
-  return driver.basePace * teamAdvantage + (rng() - 0.5) * 8;
+  return driver.basePace + trackAdvantageBonus(driver, track, 230) + (rng() - 0.5) * 7;
 }
 
 function raceScore(driver, track, startIndex, chaos, rng) {
-  const teamAdvantage = track.teamBias[driver.team] ?? 1;
   const positionPenalty = startIndex * (state.rain ? 1.05 : 1.8);
-  const teamScore = driver.basePace * teamAdvantage;
+  const teamScore = driver.basePace + trackAdvantageBonus(driver, track, 140);
   const rainScore = state.rain
     ? (driver.rainSkill - 80) * 0.75 + (driver.experience - 75) * 0.3
     : 0;
@@ -177,6 +178,11 @@ function raceScore(driver, track, startIndex, chaos, rng) {
   const incidentSwing = state.rain && chaos > 0.95 && rng() < 0.34 ? (rng() - 0.5) * 24 : 0;
 
   return teamScore + rainScore + rainAttack + randomChaos + dryVariation + incidentSwing - positionPenalty;
+}
+
+function trackAdvantageBonus(driver, track, weight) {
+  const teamAdvantage = track.teamBias[driver.team] ?? 1;
+  return (teamAdvantage - 1) * weight;
 }
 
 function analyzeRace() {
@@ -274,12 +280,28 @@ function renderEvents() {
           .join(", ")}.`
       : "Sem grandes mudanças de posição nesta simulação.",
     `Caos base da pista: ${Math.round(track.chaosBase * 100)}%.`,
-    state.minimumExpectedInversions > 0
-      ? `Check interno: ${state.chaosChecks} amostra(s), mínimo esperado ${state.minimumExpectedInversions} inversões.`
-      : "Check interno: cenário dentro da faixa normal de estabilidade.",
   ];
 
   elements.eventList.innerHTML = events.map((event) => `<li>${event}</li>`).join("");
+  renderChaosCheck();
+}
+
+function renderChaosCheck() {
+  const checkText =
+    state.minimumExpectedInversions > 0
+      ? "Cenário de alto caos: o simulador reamostra corridas muito estáveis."
+      : "Cenário dentro da faixa normal: apenas uma amostra é necessária.";
+
+  elements.chaosCheckToggle.textContent = `Check interno (${state.chaosChecks})`;
+  elements.chaosCheckDetails.innerHTML = `
+    <p>${checkText}</p>
+    <dl>
+      <div><dt>Caos efetivo</dt><dd>${Math.round(state.effectiveChaos * 100)}%</dd></div>
+      <div><dt>Amostras</dt><dd>${state.chaosChecks}</dd></div>
+      <div><dt>Mínimo esperado</dt><dd>${state.minimumExpectedInversions} inversões</dd></div>
+      <div><dt>Resultado aceito</dt><dd>${state.inversionResult.count} inversões</dd></div>
+    </dl>
+  `;
 }
 
 function minimumInversionsForScenario(track, effectiveChaos) {
@@ -346,6 +368,12 @@ function hideMergeDrawer() {
   elements.mergeDrawer.hidden = true;
   elements.mergeToggle.setAttribute("aria-expanded", "false");
   elements.mergeToggle.textContent = "Merge Count";
+}
+
+function toggleChaosCheck() {
+  const shouldShow = elements.chaosCheckDetails.hidden;
+  elements.chaosCheckDetails.hidden = !shouldShow;
+  elements.chaosCheckToggle.setAttribute("aria-expanded", String(shouldShow));
 }
 
 function getRainSpecialists() {

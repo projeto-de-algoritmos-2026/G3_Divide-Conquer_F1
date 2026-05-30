@@ -127,6 +127,50 @@ h2 {
   background: rgba(255, 255, 255, 0.09);
 }
 
+.event-check-button {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.check-details {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #c1cad6;
+}
+
+.check-details[hidden] {
+  display: none;
+}
+
+.check-details p {
+  margin-bottom: 10px;
+}
+
+.check-details dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.check-details dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.check-details dt {
+  color: #97a6b8;
+}
+
+.check-details dd {
+  margin: 0;
+  color: #eef3f8;
+  font-weight: 700;
+  text-align: right;
+}
+
 .score-strip strong {
   display: block;
   margin-top: 5px;

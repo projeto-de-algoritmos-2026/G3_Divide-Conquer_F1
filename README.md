@@ -55,7 +55,8 @@ Quando a chuva acontece, o caos aumenta bastante e a vantagem passa a favorecer 
 * Destaque de posições ganhas e perdidas.
 * Bloco de influências com características da pista, vantagem de equipe e chance de chuva.
 * Bloco de eventos de corrida com chuva ativa, mudanças de posição e caos base.
-* Check interno para evitar corridas anormalmente estáveis em cenários de chuva e alto caos.
+* Check interno sob demanda para evitar corridas anormalmente estáveis em cenários de chuva e alto caos.
+* Peso reforçado da vantagem da pista, especialmente na formação do grid de largada.
 * Exibição dos passos do Merge Count sob demanda, por botão discreto.
 * Testes simples para validar a contagem de inversões.
 
