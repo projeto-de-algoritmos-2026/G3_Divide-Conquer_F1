@@ -47,6 +47,7 @@ Quando a chuva acontece, o caos aumenta bastante e a vantagem passa a favorecer 
 
 ## Funcionalidades
 * Simulação de diferentes GPs.
+* Nova semente automática ao resetar, evitando repetir exatamente a mesma corrida.
 * Ordem de largada gerada por desempenho de classificação.
 * Ordem de chegada simulada por pista, equipe, chuva e caos.
 * Índice de caos baseado em contagem de inversões.

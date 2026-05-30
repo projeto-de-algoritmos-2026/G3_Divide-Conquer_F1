@@ -218,7 +218,8 @@ function init() {
 
 function resetRace(resetSeed) {
   if (resetSeed) {
-    state.seed = Number(elements.seedInput.value || 2026);
+    state.seed = nextSeed();
+    elements.seedInput.value = state.seed;
   }
   generateQualifying();
   state.finishOrder = [...state.startOrder];
@@ -480,6 +481,13 @@ function createRng(seed) {
 
 function hashString(text) {
   return [...text].reduce((hash, char) => hash + char.charCodeAt(0), 0);
+}
+
+function nextSeed() {
+  const currentSeed = Number(elements.seedInput.value || state.seed || 2026);
+  const timePart = Date.now() % 1000000;
+  const randomPart = Math.floor(Math.random() * 1000000);
+  return ((currentSeed * 31 + timePart + randomPart) % 999999) + 1;
 }
 
 init();
