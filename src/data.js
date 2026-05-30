@@ -113,6 +113,7 @@ export const tracks = [
       mercedes: 1.04,
       redbull: 1.0,
     },
+    characteristics: ["reta dos boxes curta", "miolo travado", "subida forte no setor final"],
     note: "Interlagos costuma embaralhar estratégia, tráfego e clima.",
   },
   {
@@ -127,6 +128,7 @@ export const tracks = [
       mercedes: 1.03,
       redbull: 0.99,
     },
+    characteristics: ["curvas longas de alta", "sequência Maggots-Becketts", "pouca tração lenta"],
     note: "Alta velocidade com vantagem para carros fortes em curvas longas.",
   },
   {
@@ -141,6 +143,7 @@ export const tracks = [
       mercedes: 0.98,
       redbull: 1.01,
     },
+    characteristics: ["ruas estreitas", "curvas lentas", "baixíssima chance de ultrapassagem"],
     note: "Poucas ultrapassagens: largada pesa muito no resultado.",
   },
   {
@@ -155,6 +158,7 @@ export const tracks = [
       mercedes: 1.0,
       redbull: 1.06,
     },
+    characteristics: ["reta Kemmel longa", "Eau Rouge/Raidillon", "volta longa e clima instável"],
     note: "Spa combina pista longa, velocidade e chuva imprevisível.",
   },
   {
@@ -169,6 +173,7 @@ export const tracks = [
       mercedes: 0.99,
       redbull: 0.98,
     },
+    characteristics: ["circuito de rua", "muitas curvas de baixa", "muro perto e safety car provável"],
     note: "Circuito de rua com safety cars e alta chance de confusão.",
   },
   {
@@ -183,6 +188,7 @@ export const tracks = [
       mercedes: 0.99,
       redbull: 1.04,
     },
+    characteristics: ["retas fortes", "frenagens pesadas", "tração na saída de curva"],
     note: "Pouca chuva: o caos depende mais de ritmo e estratégia.",
   },
 ];

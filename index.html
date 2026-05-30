@@ -77,7 +77,12 @@
 
       <aside class="analysis-panel" aria-label="Análise do algoritmo">
         <section class="analysis-block">
-          <h2>Índice de caos</h2>
+          <div class="section-heading">
+            <h2>Índice de caos</h2>
+            <button id="mergeToggle" class="ghost-button" type="button" aria-expanded="false">
+              Merge Count
+            </button>
+          </div>
           <p id="summaryText">Simule um GP para comparar largada e chegada.</p>
           <div class="meter">
             <div id="chaosBar"></div>
@@ -89,8 +94,16 @@
           <ul id="influenceList" class="influence-list"></ul>
         </section>
 
-        <section class="analysis-block steps-block">
-          <h2>Merge Count</h2>
+        <section class="analysis-block events-block">
+          <h2>Eventos de corrida</h2>
+          <ul id="eventList" class="event-list"></ul>
+        </section>
+
+        <section id="mergeDrawer" class="merge-drawer" hidden>
+          <div class="drawer-header">
+            <h2>Merge Count</h2>
+            <button id="mergeClose" class="ghost-button" type="button">Fechar</button>
+          </div>
           <div id="mergeSteps" class="merge-steps"></div>
         </section>
       </aside>

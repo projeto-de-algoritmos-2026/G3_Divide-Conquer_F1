@@ -52,7 +52,9 @@ Quando a chuva acontece, o caos aumenta bastante e a vantagem passa a favorecer 
 * Índice de caos baseado em contagem de inversões.
 * Visualização da largada e chegada lado a lado.
 * Destaque de posições ganhas e perdidas.
-* Exibição dos passos do Merge Count.
+* Bloco de influências com características da pista, vantagem de equipe e chance de chuva.
+* Bloco de eventos de corrida com chuva ativa, mudanças de posição e caos base.
+* Exibição dos passos do Merge Count sob demanda, por botão discreto.
 * Testes simples para validar a contagem de inversões.
 
 ## Instalação

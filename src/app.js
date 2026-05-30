@@ -30,6 +30,10 @@ const elements = {
   rainChance: document.querySelector("#rainChance"),
   favoredTeam: document.querySelector("#favoredTeam"),
   rainBoost: document.querySelector("#rainBoost"),
+  eventList: document.querySelector("#eventList"),
+  mergeToggle: document.querySelector("#mergeToggle"),
+  mergeClose: document.querySelector("#mergeClose"),
+  mergeDrawer: document.querySelector("#mergeDrawer"),
 };
 
 function init() {
@@ -51,6 +55,8 @@ function init() {
   });
 
   elements.simulateButton.addEventListener("click", simulateRace);
+  elements.mergeToggle.addEventListener("click", toggleMergeDrawer);
+  elements.mergeClose.addEventListener("click", hideMergeDrawer);
   elements.qualifyingButton.addEventListener("click", () => {
     state.seed = Number(elements.seedInput.value || 1) + 17;
     elements.seedInput.value = state.seed;
@@ -134,6 +140,7 @@ function render() {
   renderOrder(elements.finishList, state.finishOrder, true);
   renderMetrics();
   renderInfluences();
+  renderEvents();
   renderSteps();
   updateTrackPanel();
 }
@@ -193,20 +200,34 @@ function renderMetrics() {
 function renderInfluences() {
   const track = getTrack();
   const bestTeam = Object.entries(track.teamBias).sort((a, b) => b[1] - a[1])[0];
-  const rainSpecialists = [...drivers]
-    .sort((a, b) => b.rainSkill + b.experience * 0.25 - (a.rainSkill + a.experience * 0.25))
-    .slice(0, 3);
 
   const items = [
-    `${track.note}`,
+    `Características: ${track.characteristics.join("; ")}.`,
     `Vantagem de pista: ${teams[bestTeam[0]].name} (${bestTeam[1].toFixed(2)}x).`,
     `Chuva neste GP: ${Math.round(track.rainChance * 100)}% de chance.`,
-    state.rain
-      ? `Chuva ativa: ${rainSpecialists.map((driver) => driver.short).join(", ")} recebem forte vantagem.`
-      : "Sem chuva: vantagem fica mais ligada ao carro e à posição de largada.",
   ];
 
   elements.influenceList.innerHTML = items.map((item) => `<li>${item}</li>`).join("");
+}
+
+function renderEvents() {
+  const track = getTrack();
+  const rainSpecialists = getRainSpecialists();
+  const biggestMovers = getBiggestMovers();
+  const events = [
+    state.rain
+      ? `Chuva ativa: ${rainSpecialists.map((driver) => driver.short).join(", ")} receberam forte vantagem.`
+      : "Sem chuva: vantagem ficou mais ligada ao carro, à largada e ao ritmo seco.",
+    track.note,
+    biggestMovers.length
+      ? `Maiores mudanças: ${biggestMovers
+          .map((entry) => `${entry.driver.short} ${formatDelta(entry.delta)}`)
+          .join(", ")}.`
+      : "Sem grandes mudanças de posição nesta simulação.",
+    `Caos base da pista: ${Math.round(track.chaosBase * 100)}%.`,
+  ];
+
+  elements.eventList.innerHTML = events.map((event) => `<li>${event}</li>`).join("");
 }
 
 function renderSteps() {
@@ -246,6 +267,40 @@ function updateTrackPanel() {
   elements.rainBoost.textContent = state.rain
     ? "Chuva: experiência e talento no molhado pesam muito"
     : "Seco: carro e largada pesam mais";
+}
+
+function toggleMergeDrawer() {
+  const shouldShow = elements.mergeDrawer.hidden;
+  elements.mergeDrawer.hidden = !shouldShow;
+  elements.mergeToggle.setAttribute("aria-expanded", String(shouldShow));
+  elements.mergeToggle.textContent = shouldShow ? "Ocultar Merge" : "Merge Count";
+}
+
+function hideMergeDrawer() {
+  elements.mergeDrawer.hidden = true;
+  elements.mergeToggle.setAttribute("aria-expanded", "false");
+  elements.mergeToggle.textContent = "Merge Count";
+}
+
+function getRainSpecialists() {
+  return [...drivers]
+    .sort((a, b) => b.rainSkill + b.experience * 0.25 - (a.rainSkill + a.experience * 0.25))
+    .slice(0, 3);
+}
+
+function getBiggestMovers() {
+  const startPosition = new Map(state.startOrder.map((driverId, index) => [driverId, index]));
+  return state.finishOrder
+    .map((driverId, index) => {
+      const driver = getDriver(driverId);
+      return {
+        driver,
+        delta: startPosition.get(driverId) - index,
+      };
+    })
+    .filter((entry) => entry.delta !== 0)
+    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+    .slice(0, 3);
 }
 
 function getTrack() {
